@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: match-me-eat
+  profiles:
+    active: ${ENV_PROFILES_ACTIVE}
+
+server:
+  servlet:
+    contextPath: /api
+
+custom:
+  jwt:
+    private-key: classpath:jwt/rsa.private
+    public-key: classpath:jwt/rsa.public
+    ttl: 15m
+  refresh-token:
+    ttl: 30d
