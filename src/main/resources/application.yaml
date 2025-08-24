@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: match-me-eat
+  profiles:
+    active: ${ENV_PROFILES_ACTIVE}
+
+server:
+  port: 8080
+  servlet:
+    contextPath: /api
+
+jwt:
+  private-key: classpath:jwt/rsa.private
+  public-key: classpath:jwt/rsa.public
+  ttl: 15m
