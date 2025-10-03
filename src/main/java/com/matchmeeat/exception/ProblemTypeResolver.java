@@ -3,9 +3,11 @@ package com.matchmeeat.exception;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.matchmeeat.exception.customexceptions.EmailNotSentException;
 import com.matchmeeat.exception.customexceptions.InvalidRefreshTokenException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenExpiredException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenRevokedException;
+import com.matchmeeat.exception.customexceptions.UserRegistrationException;
 import com.matchmeeat.exception.customexceptions.ValidationException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -36,11 +38,13 @@ public final class ProblemTypeResolver {
         Map.entry(JsonGenerationException.class, "json-error"),
         Map.entry(JsonParseException.class, "json-error"),
         Map.entry(JsonProcessingException.class, "json-error"),
+        Map.entry(EmailNotSentException.class, "mail-not-sent"),
         Map.entry(MethodArgumentNotValidException.class, "request-parameters"),
         Map.entry(NumberFormatException.class, "number-format"),
         Map.entry(RefreshTokenExpiredException.class, "refresh-token-expired"),
         Map.entry(RefreshTokenRevokedException.class, "refresh-token-revoked"),
         Map.entry(UsernameNotFoundException.class, "not-existing-user"),
+        Map.entry(UserRegistrationException.class, "user-registration-error"),
         Map.entry(ValidationException.class, "validation-error")
     );
 

@@ -5,13 +5,16 @@ import com.matchmeeat.auth.dto.RegistrationRequestDto;
 import com.matchmeeat.auth.token.dto.TokensDto;
 import com.matchmeeat.auth.token.entity.RefreshToken;
 import com.matchmeeat.auth.token.service.RefreshTokenService;
+import com.matchmeeat.email.service.EmailService;
 import com.matchmeeat.exception.customexceptions.InvalidRefreshTokenException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenExpiredException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenRevokedException;
+import com.matchmeeat.exception.customexceptions.UserRegistrationException;
 import com.matchmeeat.exception.customexceptions.ValidationException;
 import com.matchmeeat.role.RoleEnum;
 import com.matchmeeat.role.entity.Role;
 import com.matchmeeat.role.service.RoleService;
+import com.matchmeeat.user.dto.UserDto;
 import com.matchmeeat.user.entity.User;
 import com.matchmeeat.user.service.UserService;
 import com.matchmeeat.utils.SecureTokenGenerator;
@@ -28,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
 
 @Transactional
 @RequiredArgsConstructor
@@ -41,6 +43,8 @@ public class AuthenticationService {
     private final UserService userService;
     private final RoleService roleService;
     private final RefreshTokenService refreshTokenService;
+    private final EmailService emailService;
+
     @Value("${custom.refresh-token.ttl}")
     private Duration ttl;
 
@@ -82,34 +86,46 @@ public class AuthenticationService {
      * Register a new user and return verification token
      *
      * @param user user credentials and e-mail to register
-     * @return optional e-mail verification token
      */
     @Transactional
-    public Optional<String> registerUser(RegistrationRequestDto user) {
+    public void registerUser(RegistrationRequestDto user) {
         validateUser(user);
-        return UserUtils.userProvidedEmail(user) ? registerUserWithEmail(user) : registerUserWithoutEmail(user);
+
+        if (!UserUtils.userProvidedEmail(user)) {
+            registerUserWithoutEmail(user);
+            return;
+        }
+
+        String verificationToken = registerUserWithEmail(user);
+        emailService.sendVerificationEmail(user.email(), user.username(), verificationToken);
     }
 
-    private Optional<String> registerUserWithEmail(RegistrationRequestDto user) {
+    private String registerUserWithEmail(RegistrationRequestDto user) {
         Role role = roleService.findRole(RoleEnum.ROLE_USER);
         User newUser = new User(user.username().strip(), user.email().strip(), passwordEncoder.encode(user.password()), role);
         String verificationToken = SecureTokenGenerator.generateToken();
+
+        if (verificationToken == null) {
+            throw new UserRegistrationException("Could not generate verification token");
+        }
+
         newUser.setVerificationToken(verificationToken);
         userService.save(newUser);
-        return Optional.of(verificationToken);
+        return verificationToken;
     }
 
-    /**
-     * Register user without email, so no e-mail verification token is needed
-     *
-     * @param user user to register
-     * @return {@link Optional#empty()} because there's no verification token required
-     */
-    private Optional<String> registerUserWithoutEmail(RegistrationRequestDto user) {
+    private void registerUserWithoutEmail(RegistrationRequestDto user) {
         Role role = roleService.findRole(RoleEnum.ROLE_USER);
         User newUser = new User(user.username().strip(), passwordEncoder.encode(user.password()), role);
         userService.save(newUser);
-        return Optional.empty();
+    }
+
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        UserDto userDto = userService.findUserByEmail(email);
+        String newVerificationToken = SecureTokenGenerator.generateToken();
+        userService.updateVerificationToken(userDto.getEmail(), newVerificationToken);
+        emailService.sendVerificationEmail(userDto.getEmail(), userDto.getUsername(), newVerificationToken);
     }
 
     private void validateUser(RegistrationRequestDto user) {

@@ -1,6 +1,7 @@
 package com.matchmeeat.user.service;
 
 import com.matchmeeat.exception.customexceptions.ValidationException;
+import com.matchmeeat.user.dto.UserDto;
 import com.matchmeeat.user.entity.User;
 import com.matchmeeat.user.repository.UserRepository;
 import com.matchmeeat.utils.UserUtils;
@@ -76,5 +77,24 @@ public class UserServiceImpl implements UserService {
         if (!user.isCredentialsNonExpired()) {
             throw new ValidationException(HttpStatus.FORBIDDEN, "Password expired", "Your password has expired. Please reset your password.");
         }
+    }
+
+    @Override
+    public UserDto findUserByEmail(String email) {
+        User user = userRepository.findUserByEmail(email);
+        if (user.isVerified()) {
+            throw new ValidationException(
+                HttpStatus.FORBIDDEN,
+                "Account already verified",
+                "Your account has been already verified. You can log in now."
+            );
+        }
+
+        return new UserDto(user.getUsername(), user.getEmail());
+    }
+
+    @Override
+    public void updateVerificationToken(String email, String newVerificationToken) {
+        userRepository.updateVerificationToken(email, newVerificationToken);
     }
 }

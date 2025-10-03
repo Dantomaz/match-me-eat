@@ -3,9 +3,11 @@ package com.matchmeeat.exception;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.matchmeeat.exception.customexceptions.EmailNotSentException;
 import com.matchmeeat.exception.customexceptions.InvalidRefreshTokenException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenExpiredException;
 import com.matchmeeat.exception.customexceptions.RefreshTokenRevokedException;
+import com.matchmeeat.exception.customexceptions.UserRegistrationException;
 import com.matchmeeat.exception.customexceptions.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -83,7 +85,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return createProblemDetailResponseEntity(HttpStatus.BAD_REQUEST, exception, request);
     }
 
-    @ExceptionHandler({HttpServerErrorException.InternalServerError.class, IOException.class})
+    @ExceptionHandler({HttpServerErrorException.InternalServerError.class, IOException.class, UserRegistrationException.class})
     protected ResponseEntity<ProblemDetail> handleInternalServerError(Exception exception, ServletWebRequest request) {
         return createProblemDetailResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, exception, request);
     }
@@ -96,6 +98,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     protected ResponseEntity<ProblemDetail> handleNotFound(Exception exception, ServletWebRequest request) {
         return createProblemDetailResponseEntity(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(EmailNotSentException.class)
+    protected ResponseEntity<ProblemDetail> handleFailedDependency(Exception exception, ServletWebRequest request) {
+        return createProblemDetailResponseEntity(HttpStatus.FAILED_DEPENDENCY, exception, request);
     }
 
     private ResponseEntity<ProblemDetail> createProblemDetailResponseEntity(HttpStatus httpStatus, Exception exception, ServletWebRequest request) {

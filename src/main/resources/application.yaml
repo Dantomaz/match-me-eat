@@ -15,3 +15,6 @@ custom:
     ttl: 15m
   refresh-token:
     ttl: 30d
+  email:
+    verify-token:
+      ttl: 15m
